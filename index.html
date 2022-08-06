@@ -1,44 +1,108 @@
-<html>
+<!DOCTYPE html>
 <script src='https://d3js.org/d3.v5.min.js'></script>
-<style>
-    circle {
-        fill: lightblue;
-        stroke: black;
-    }
-</style>
 
-<body onload='init()'>
-    <svg width=300 height=300>
-    </svg>
-    <script>
-        async function init() {
+<head>
+    <link rel="stylesheet" href="mystyle.css">
+</head>
 
-            const data = await d3.csv('https://flunky.github.io/cars2017.csv');
+<body onload='init()'></body>
+<div id="header">
+    <h1>Fuel Efficiency of Cars</h1>
+</div>
+<svg width=700 height=700>
+</svg>
+<div id="tooltip" opacity=0></div>
+<script>
+    async function init() {
+        const data = await d3.csv('https://flunky.github.io/cars2017.csv');
 
-            var xs = d3.scaleLog().domain([10, 150]).range([200, 0]);
-            var ys = d3.scaleLog().domain([10, 150]).range([0, 200]);
+        var xs = d3.scaleLog().domain([10, 150]).range([500, 0]);
+        var ys = d3.scaleLog().domain([10, 150]).range([0, 500]);
 
-            d3.select('svg').append('g')
-                .attr('transform', 'translate(50,50)')
-                .selectAll('circle').data(data).enter().append('circle')
-                .attr('cx', function (d) { return 200 - xs(d.AverageCityMPG); })
-                .attr('cy', function (d) { return 200 - ys(d.AverageHighwayMPG); })
-                .attr('r', function (d) { return 2 + parseInt(d.EngineCylinders); });
+        d3.select('svg').append('g')
+            .attr('transform', 'translate(100,100)')
+            .selectAll('circle').data(data).enter().append('circle')
+            .attr('cx', function (d) { return 500 - xs(d.AverageCityMPG); })
+            .attr('cy', function (d) { return 500 - ys(d.AverageHighwayMPG); })
+            .attr('r', function (d) { return 7; })
+            .attr('fill', "lightblue")
+            .on("click",
+                function (d) {
+                    console.log(d3.select('#tooltip').style('opacity'));
+                    if (d3.select('#tooltip').style('opacity') == 0) {
+                        d3.select('#tooltip').style('opacity', 1)
+                            .style("left", (d3.event.pageX) + "px")
+                            .style("top", (d3.event.pageY) + "px")
+                            .html("---Tooltip---" + "<br/>" +
+                                "Maker: " + d.Make + "<br/>" +
+                                "Fuel type: " + d.Fuel + "<br/>" +
+                                "Engine: " + d.EngineCylinders + "<br/>" +
+                                "Highway MPG: " + d.AverageHighwayMPG + "<br/>" +
+                                "City MGP: " + d.AverageCityMPG + "<br/>");
+                        d3.event.composedPath()[0].style.stroke = 'black';
+                    } else {
+                        console.log('out');
+                        d3.select('#tooltip').style('opacity', 0);
+                        d3.event.composedPath()[0].style.stroke = 'none';
+                    }
+                }
+            )
+            ;
 
-            d3.select('svg').append('g')
-                .attr('transform', 'translate(50,50)')
-                .call(d3.axisLeft().scale(xs)
-                    .tickValues([10, 20, 50, 100])
-                    .tickFormat(d3.format("~s")));
+        d3.select('svg').append('g')
+            .attr('transform', 'translate(100,100)')
+            .call(d3.axisLeft().scale(xs)
+                .tickValues([10, 20, 50, 100])
+                .tickFormat(d3.format("~s")));
 
-            d3.select('svg').append('g')
-                .attr('transform', 'translate(50,250)')
-                .call(d3.axisBottom().scale(ys)
-                    .tickValues([10, 20, 50, 100])
-                    .tickFormat(d3.format("~s")));
+        d3.select('svg').append('g')
+            .attr('transform', 'translate(100,600)')
+            .call(d3.axisBottom().scale(ys)
+                .tickValues([10, 20, 50, 100])
+                .tickFormat(d3.format("~s")));
 
+        var colors = ["black", "none", "red", "orange", "yellow", "none", "green", "none", "blue", "none", "navy", "none", "purple"];
+        for (let n = 0; n < colors.length; n++) {
+            d3.select('svg').selectAll('circle')
+                .filter(function (d) { return d.EngineCylinders == n; })
+                .attr('fill', function (d) { return colors[n]; })
+                .attr('fill-opacity', 0.3);
+            if (colors[n] != "none") {
+                d3.select('svg').append('g');
+            }
         }
-    </script>
+        d3.select('svg').append('g')
+            .append("text")
+            .style('font-size', '12px')
+            .attr("class", "x label")
+            .attr("text-anchor", "end")
+            .attr("x", 200)
+            .attr("y", 630)
+            .text("City Miles per Gallon →");
+        d3.select('svg').append('g')
+            .append("text")
+            .style('font-size', '12px')
+            .attr("class", "x label")
+            .attr("text-anchor", "end")
+            .attr("x", 150)
+            .attr("y", 94)
+            .text("Highway Miles per Gallon ↑");
+    }
+
+    function fuelFilter(fuelType) {
+        var electricityCars = d3.select('svg').selectAll('circle')
+            .filter(function (d) { return d.Fuel == fuelType; });
+        if (electricityCars.attr('stroke') == null) {
+            electricityCars.attr('stroke', 'black');
+        } else {
+            electricityCars.attr('stroke', null);
+        }
+    }
+
+</script>
+<button onclick="fuelFilter('Gasoline')">Gasoline Cars</button>
+<button onclick="fuelFilter('Diesel')">Diesel Cars</button>
+<button onclick="fuelFilter('Electricity')">Electricity Cars</button>
 </body>
 
 </html>
